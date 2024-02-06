@@ -228,15 +228,86 @@ let countries = [
   },
 ];
 
-d3.selectAll("svg#big-countries") // select the svg with ID “big-countries”
-  .attr("width", 400)
-  .attr("height", 250)
-  .selectAll("rect") // select all the rectangles in this SVG - new selection starts here (and is empty for now) 
+// Define the dimensions and margins for the graph
+var margin = { top: 20, right: 20, bottom: 40, left: 40 },
+  padding = { top: 20, right: 20, bottom: 20, left: 20 },
+  outerWidth = 400,
+  outerHeight = 250,
+  innerWidth = outerWidth - margin.left - margin.right,
+  innerHeight = outerHeight - margin.top - margin.bottom,
+  width = innerWidth - padding.left - padding.right,
+  height = innerHeight - padding.top - padding.bottom;
+
+// Create scales x & y for X and Y axis and set their ranges
+var x = d3.scaleLinear().range([0, innerWidth]); // Added padding.right in order to match solution
+var y = d3.scaleBand().range([0, innerHeight]).padding(0.1);
+
+var svg = d3
+  .select("body")
+  .append("svg")
+  // set the id, dimensions and position of the svg element
+  .attr("id", "svg1")
+  .attr("width", outerWidth)
+  .attr("height", outerHeight);
+  
+// Sort the countries array by population in descending order
+countries.sort((a, b) => b.Population - a.Population); 
+
+// Set domain of X and Y scales
+x.domain([0, d3.max(countries, (d) => d.Population)]);
+y.domain(countries.map((d) => d.Country));
+
+// Create two axis function
+var x_axis = d3.axisTop(x);
+var y_axis = d3.axisLeft(y);
+
+// Create container for plot elements
+var container = svg
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+  .attr("id", "container");
+
+// Add bars to svg - create new elements based on your data
+var bars = container.append("g").attr("transform", "translate(" + padding.left + "," + padding.top + ")").attr("id", "bars");
+
+// Create bars and assign it to a variable 'bars'
+bars
+  .selectAll("rect") // select all the rectangles in this SVG - new selection starts here (and is empty for now)
   .data(countries) // Bind the data in countries to these (non-existent rectangles)
   .enter()
   .append("rect") // selection now has 11 rects, each associated with 1 row of data
+  .transition()
+  .duration(1000)
   .attr("x", 0)
-  .attr("y", (d, i) => i * 20)
-  .attr("height", 15)
-  .attr("width", (d) => (d.Population / 1500) * 400)
+  .attr("y", (d) => y(d.Country))
+  .attr("height", y.bandwidth())
+  .attr("width", (d) => x(d.Population))
   .style("fill", "red");
+
+// Add X-axis
+var x_axis_line = container
+  .append("g")
+  .attr("id", "x-axis")
+  .attr("transform", "translate(" + padding.left + "," + padding.top + ")")
+  .call(x_axis);
+
+// Create Y-axis
+var y_axis_line = container
+  .append("g")
+  .attr("id", "y-axis")
+  .attr("transform", "translate(" + padding.left + "," + padding.top + ")")
+  .call(y_axis);
+
+ // Rotate y-axis tick labels
+ y_axis_line.selectAll("text")
+.attr("transform", "rotate(-25)")
+.style("text-anchor", "end")
+.attr("dx", "-0.05em")
+.attr("dy", "0.05em"); 
+
+// Add text label for X axis
+var x_axis_label = container
+  .append("text")
+  .attr("id", "x_axis_label")
+  .attr("transform", "translate(" + width / 2 + "," + 0 + ")")
+  .text("Population");
