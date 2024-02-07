@@ -38,12 +38,12 @@ const svg = d3
 // Create linear scales x & y for X and Y axis and set their ranges - positional scales
 const xScale = d3
   .scaleLinear()
-  .domain(d3.extent(cars, (car) => car.disp))
-  .range([0, innerWidth]);
+  .domain([0, d3.max(cars, (car) => car.disp)])
+  .range([0, width]);
 const yScale = d3
   .scaleLinear()
-  .domain(d3.extent(cars, (car) => car.mpg))
-  .range([innerHeight, 0]);
+  .domain([0, d3.max(cars, (car) => car.mpg) + 5])
+  .range([height, 0]);
 
 // Create scales for the size of dots (wt), color of dots (cyl) and shape of dot (cyl) - categorical scales
 var symbol = d3.symbol();
@@ -64,39 +64,6 @@ const container = svg
   .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
   .attr("id", "container");
 
-// Generate symbols
-// const triangle = svg.append("path").attr("d", d3.symbol(d3.symbolCross));
-// const circle = d3.symbolCircle();
-// const diamond = d3.symbolDiamond();
-
-// container.selectAll("circle")
-//     .data(cars)
-//     .enter()
-//     .append("circle")
-//     .append(function(car) {
-//         // Check the number of cylinders and append the appropriate shape
-//         if (car.cyl === 4) {
-//            return diamond();
-//           //return document.createElementNS("http://www.w3.org/2000/svg", "square");
-//         } else if (car.cyl === 6) {
-//            return triangle();
-//            // return document.createElementNS("http://www.w3.org/2000/svg", triangle());
-//         } else {
-//             return circle();
-//            // return document.createElementNS("http://www.w3.org/2000/svg", "circle");
-//         }
-//       })
-//     .attr("transform", function(car) {
-//         // Translate the symbols to their respective positions
-//         return "translate(" + xScale(car.disp) + "," + yScale(car.mpg) + ")";
-//     })
-//     .attr("cx", car => xScale(car.disp))
-//     .attr("cy", car => yScale(car.mpg))
-//     .attr("r", car => sizeScale(car.wt)) // Adjust size of the circles
-//     .attr("stroke", "steelblue") // Set outline color
-//     .attr("stroke-width", 1) // Set stroke width
-//     .attr("fill", car => colorScale(car.cyl)); // Set fill to transparent
-
 var dots = container.selectAll(".dots").data(cars).enter().append("path");
 
 dots
@@ -115,25 +82,65 @@ dots
   .attr("fill", (car) => colorScale(car.cyl)) // Set fill to transparent
   .attr("stroke", "steelblue") // Set outline color
   .attr("stroke-width", 1) // Set stroke width
-  //.attr("cx", (car) => xScale(car.disp))
-  //.attr("cy", (car) => yScale(car.mpg))
   .attr("r", (car) => sizeScale(car.wt)) // Adjust size of the circles
   .attr("transform", function (car) {
     return "translate(" + xScale(car.disp) + "," + yScale(car.mpg) + ")";
   });
 
 // Create two axis function
-const x_axis = d3.axisBottom(xScale);
-const y_axis = d3.axisLeft(yScale);
+const x_axis = d3.axisBottom(xScale).ticks(10);
+const y_axis = d3.axisLeft(yScale).ticks(10);
 
+// Create grid function
+const x_axis_grid = d3
+  .axisBottom(xScale)
+  .tickSize(-height)
+  .tickFormat("")
+  .ticks(10);
+const y_axis_grid = d3
+  .axisLeft(yScale)
+  .tickSize(-width)
+  .tickFormat("")
+  .ticks(10);
+
+// Create grid line
+container
+  .append("g")
+  .attr("class", "x axis_grid")
+  .attr("transform", "translate(0, " + height + ")")
+  .call(x_axis_grid);
+
+container.append("g").attr("class", "y axis_grid").call(y_axis_grid);
+
+// Create axes
 var x_axis_line = container
   .append("g")
   .attr("id", "x_axis")
-  .attr("transform", "translate(0," + (innerHeight + padding.bottom) + ")")
+  .attr("transform", "translate(" + 0 + "," + height + ")")
   .call(x_axis);
 
-var y_axis_line = container
-  .append("g")
-  .attr("id", "y_axis")
-  .attr("transform", "translate(" + 0 + "," + padding.bottom + ")")
-  .call(y_axis);
+var y_axis_line = container.append("g").attr("id", "y_axis").call(y_axis);
+
+// Add text labels for X and Y axis
+var x_axis_label = container
+  .append("text")
+  .attr("id", "x_axis_label")
+  .attr("x", width / 2 - 40)
+  .attr("y", height + margin.bottom)
+  .text("displacement (cu. in.)");
+
+var y_axis_label = container
+  .append("text")
+  .attr("id", "y_axis_label")
+  .attr("transform", "rotate(-90)")
+  .attr("x", -height / 2 - 50)
+  .attr("y", -28)
+  .text("fuel efficiency (mpg)");
+
+var title = container
+  .append("text")
+  .attr("id", "title")
+  .attr("transform", "translate(" + 0 + "," + -padding.top + ")")
+  .text(
+    "Scatter plot of the gas mileage (mpg) vs the displacement (disp) of some cars"
+  );
